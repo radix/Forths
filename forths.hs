@@ -1,15 +1,51 @@
-add :: [Int] -> [Int]
-add (x:x2:xs) = x + x2 : xs
-add _ = error "not enough data on stack"
+{-# LANGUAGE DeriveFunctor #-}
 
-data Expr =
-    FInt Int
-  | FCall ([Int] -> [Int])
+module Forths (
+    Forth,
+    Expr,
+    pushInt,
+    word,
+    end,
+    pretty
+    ) where
 
-eval :: [Expr] -> [Int]
-eval []            = []
-eval ((FInt n) : xs) = n : eval xs
-eval ((FCall f) : xs) = f $ eval xs
+import Control.Monad.Free
 
-main = do
-  putStrLn $ show $ eval $ reverse [FInt 3, FInt 2, FCall add, FInt 100, FCall add]
+data Expr cont
+  = FInt Int cont
+  | FString String cont
+  | FWord String cont
+  | End
+  deriving (Show, Functor)
+
+type Forth = Free Expr
+
+-- lift the data constructors into free versions (?)
+
+pushInt :: Int -> Forth ()
+pushInt n = liftF $ FInt n ()
+word :: String -> Forth ()
+word w = liftF $ FWord w ()
+end :: Forth ()
+end = liftF $ End
+
+
+pretty :: Forth t -> String
+pretty (Free (FInt n cont)) = "push " ++ show n ++ ";\n" ++ pretty cont
+pretty (Free (FString s cont)) = "push " ++ s ++ ";\n" ++ pretty cont
+pretty (Free (FWord s cont)) = "call " ++ s ++ ";\n" ++ pretty cont
+pretty (Free End) = "end.\n"
+
+--main = do
+--     putStrLn $ show $ program
+
+{-
+todo:
+
+- parse the following into the example program:
+    3 2 add 100 add
+- function definition
+- is there a way to define built-ins without having to be concerned about the
+  tail of the stack?
+
+-}
