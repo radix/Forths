@@ -1,0 +1,5 @@
+.cabal-sandbox/
+cabal.sandbox.config
+forths
+forths.hi
+forths.o
