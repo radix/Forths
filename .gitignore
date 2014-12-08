@@ -1,4 +1,6 @@
 .cabal-sandbox/
+dist/
+forths.cabal.save0
 cabal.sandbox.config
 forths
 forths.hi
