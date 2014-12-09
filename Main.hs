@@ -12,5 +12,13 @@ program = do
     word "add"
     end
 
+program2 :: Forth ()
+program2 = do
+	pushInt 3
+	pushInt 2
+	word "add"
+	end
+
 main = do
 	putStrLn $ pretty program
+	putStrLn $ show $ eval program []

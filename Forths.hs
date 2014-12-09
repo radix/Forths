@@ -2,11 +2,12 @@
 
 module Forths (
     Forth,
-    Expr,
+    Expr(FInt, FString, FWord, End),
     pushInt,
     word,
     end,
-    pretty
+    pretty,
+    eval
     ) where
 
 import Control.Monad.Free
@@ -37,22 +38,17 @@ pretty (Free (FWord s cont)) = "call " ++ s ++ ";\n" ++ pretty cont
 pretty (Free End) = "end.\n"
 
 
--- Confused about exactly how to do evalutaion.
--- First, think about whether I want a side-effecting interpreter: not at first.
--- I think I'd like a pure evaluation function of Forth -> Stack -> Stack,
--- though it probably won't be useful for a real side-effecting interpreter.
-
---main = do
---     putStrLn $ show $ program
+eval :: Forth t -> [Int] -> [Int]
+eval (Free (FInt n cont)) xs = eval cont (n : xs)
+eval (Free End) xs = xs
+eval (Free (FWord "add" cont)) (x:x2:xs) = eval cont (x + x2 : xs)
+eval (Free (FWord word cont)) xs = error ("unhandled word " ++ word ++ " with stack " ++ show xs)
 
 {-
 todo:
 
-- parse the following into the example program:
-    3 2 add 100 add
-- interpreter
-- function definition
-- is there a way to define built-ins without having to be concerned about the
-  tail of the stack?
-
+- parser
+- word definition
+- side effects
+- homogenous stack... could I use a free monad for that too?
 -}
