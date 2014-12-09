@@ -17,8 +17,11 @@ program2 = do
 	pushInt 3
 	pushInt 2
 	word "add"
+	pushString "abc"
+	pushInt 1
+	word "index"
 	end
 
 main = do
 	putStrLn $ pretty program
-	putStrLn $ show $ eval program []
+	putStrLn $ show $ eval program2 []
