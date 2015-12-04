@@ -8,10 +8,12 @@ module Forths (
     word,
     end,
     pretty,
-    eval
+    eval,
+    evalInEnv
     ) where
 
 import Control.Monad.Free
+import qualified Data.Map as Map -- only for interpreter, refactor
 
 -- Questions:
 
@@ -20,6 +22,8 @@ import Control.Monad.Free
 -- 2. I'm not actually sure why End is useful.
 -- 3. This type allows very invalid things to be represented, such as
 --    FInt 3 "hoobledy". Is there a way I can only allow further Exprs?
+--    I think this arbitrary "cont" value is also why I need to put a
+--    (Show t) => in my functions which take Forths below.
 
 data Expr cont
   = FInt Int cont
@@ -58,7 +62,8 @@ data FData
   deriving (Show, Eq)
 
 
--- todo: custom words will need errors
+
+-- | An evaluator with no environment, with support for some hard-coded words.
 eval :: (Show t) => Forth t -> [FData] -> [FData]
 eval (Free (FInt n cont)) xs = eval cont (RInt n : xs)
 eval (Free (FString s cont)) xs = eval cont (RString s : xs)
@@ -67,6 +72,27 @@ eval (Free (FWord "add" cont)) ((RInt x):(RInt y):xs) = eval cont (RInt (x + y) 
 eval (Free (FWord "index" cont)) ((RInt index):(RString string):xs) = eval cont (RString [string !! index] : xs)
 eval (Free End) xs = xs
 eval prog xs = error ("unhandled program " ++ show prog ++ " with stack " ++ show xs)
+
+
+type Dictionary t = Map.Map String (Forth t)
+
+-- | An evaluator that supports custom word definitions
+-- Defining a word uses a syntax like:
+-- do word ":"
+--    word "name"
+--    ...
+--    word ";"
+evalInEnv :: (Show t) => Forth t -> Dictionary t -> [FData] -> ([FData], Dictionary t)
+evalInEnv (Free (FInt n cont)) d xs = evalInEnv cont d (RInt n : xs)
+evalInEnv (Free (FString s cont)) d xs = evalInEnv cont d (RString s : xs)
+evalInEnv (Free (FWord "eq?" cont)) d (x:y:xs) = evalInEnv cont d (RBool (x == y) : xs)
+evalInEnv (Free (FWord "add" cont)) d ((RInt x):(RInt y):xs) = evalInEnv cont d (RInt (x + y) : xs)
+evalInEnv (Free (FWord "index" cont)) d ((RInt index):(RString string):xs) = evalInEnv cont d (RString [string !! index] : xs)
+-- define the function, put it in the dictionary, and eval the continuation with the new dictionary
+evalInEnv (Free (FWord ":" cont)) d stack = _
+evalInEnv (Free (FWord word cont)) d stack = _
+evalInEnv (Free End) d xs = (xs, d)
+evalInEnv prog d xs = error ("unhandled program " ++ show prog ++ " with stack " ++ show xs ++ " and dictionary " ++ show d)
 
 {-
 todo:
